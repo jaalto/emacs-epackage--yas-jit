@@ -137,10 +137,10 @@
 ;;; Code:
 
 (require 'cl)
-(require 'yasnippet nil t)
-(require 'yasnippet-bundle nil t)
-(when (and (not (featurep 'yasnippet)) (not (featurep 'yasnippet-bundle)))
-  (error "Cannot load yasnippet."))
+(require 'yasnippet)
+;; (require 'yasnippet-bundle nil t)
+;; (when (and (not (featurep 'yasnippet)) (not (featurep 'yasnippet-bundle)))
+;;  (error "Cannot load yasnippet."))
 
 (if (and (not (fboundp 'yas/snippet-dirs))
 	 (fboundp 'yas/guess-snippet-directories))
