@@ -1,0 +1,22 @@
+Package: yas-jit
+Section: extensions
+License: GPL-3+
+Depends: emacs (>= 22), yasnippet
+Status: stable
+Compat:
+Maintainer: Jari Aalto <jari.aalto@cante.net>
+Bugs:
+Upstream: Matthew L. Fidler <matthew.fidler@gmail.com>
+Upstream-Bugs: https://github.com/mlf176f2/yas-jit.el/issues
+Vcs-Type: git
+Vcs-Url: git://github.com/mlf176f2/yas-jit.el.git
+Vcs-Browser: https://github.com/mlf176f2/yas-jit.el
+Homepage:
+Wiki: http://www.emacswiki.org/emacs/yas-jit.el
+Commentary: yas-jit.el
+Description: load Yasnippets on demand (makes start up faster)
+ Load yasnippeds when needed. Manual activation:
+ .
+    ;; ~/.emacs.d/epackage/packages/yasnippet/snippets
+    (setq yas/root-directory DIR)
+    (yas/jit-load)
