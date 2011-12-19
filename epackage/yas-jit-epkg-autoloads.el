@@ -7,4 +7,4 @@
 (autoload 'yas/jit-dir-snippet-cache            "yas-jit" "" nil)
 (autoload 'yas/jit-compile-bundle               "yas-jit" "" t)
 (autoload 'yas/jit-compile-dir                  "yas-jit" "" t)
-(provide 'yas-git-epkg-autoloads)
+(provide 'yas-jit-epkg-autoloads)
