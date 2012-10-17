@@ -6,9 +6,9 @@
 ;; Maintainer: Matthew L. Fidler
 ;; Created: Wed Oct 27 08:14:43 2010 (-0500)
 ;; Version: 0.8.6
-;; Last-Updated: Mon Dec 12 09:22:52 2011 (-0600)
-;;           By: us041375
-;;     Update #: 178
+;; Last-Updated: Mon Jun 25 14:09:04 2012 (-0500)
+;;           By: Matthew L. Fidler
+;;     Update #: 202
 ;; URL: http://www.emacswiki.org/emacs/download/yas-jit.el
 ;; Keywords: Yasnippet fast loading.
 ;; Compatibility: Emacs 23.2 with Yasnippet 0.6 or 0.7
@@ -50,6 +50,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;;; Change Log:
+;; 25-Jun-2012    Matthew L. Fidler  
+;;    Last-Updated: Mon Jun 25 14:07:22 2012 (-0500) #201 (Matthew L. Fidler)
+;;    Updated to work with the latest trunk
 ;; 12-Dec-2011      
 ;;    Last-Updated: Mon Dec 12 09:22:00 2011 (-0600) #176 (us041375)
 ;;    Deleted cache on menu-based ``reload-all''
@@ -169,8 +172,8 @@
 (defun yas/jit-cache ()
   "Cache JIT loading to make it load even faster"
   (with-temp-file "~/.yas-jit-cache.el"
-      (insert ";;Yasnippet JIT cache\n(setq yas/get-jit-loads-again nil)\n")
-      (insert (format  "(setq yas/jit-loads '(%s))"
+    (insert ";;Yasnippet JIT cache\n(setq yas/get-jit-loads-again nil)\n")
+    (insert (format  "(setq yas/jit-loads '(%s))"
 		     (mapconcat
 		      (lambda(a)
 			(format "(%s \"%s\")" (symbol-name (nth 0 a))
@@ -188,7 +191,7 @@
     (when (file-readable-p f)
       (delete-file f))))
 
-
+;;;###autoload
 (defun yas/get-jit-loads ()
   "* Loads Snippet directories just in time.  Should speed up the start-up of Yasnippet"
   (if (and yas/jit-use-cache-dir (file-readable-p "~/.yas-jit-cache.el"))
@@ -199,48 +202,48 @@
 	(setq yas/get-jit-loads-again nil))
     (when yas/get-jit-loads-again
       (let* ((dirs (yas/snippet-dirs))
-           files
-           modes
-           (files '())
-           (debug-on-error 't)
-           jit)
-      (when dirs
-        (mapc (lambda(x)
-                (setq files (append files (directory-files x 't))))
-              (yas/snippet-dirs))
-        (setq modes
-              (remove-if-not
-               #'(lambda(file)
-                   (and (file-directory-p file)
-                        (not (string-match "^[.]" (file-name-nondirectory file)))))
-               (directory-files (pop dirs) 't)))
-        (setq jit (mapcar (lambda(x) (list (intern (file-name-nondirectory x)) x) ) modes))
-        ;; Now add more directories.
-        (when (> (length dirs) 0)
-          (mapc
-           (lambda(dir)
-             (let ( (modes (remove-if-not
-                           #'(lambda(file)
-                               (and (file-directory-p file)
-                                    (not (string-match "^[.]" (file-name-nondirectory file)))))
-                           (directory-files dir 't))))
-               (mapc (lambda(mode)
-                       (if (not (assoc (intern (file-name-nondirectory mode)) jit))
-                           (add-to-list 'jit (list (intern (file-name-nondirectory mode)) mode))
-                         (setq jit (mapcar
-                                    (lambda(m)
-                                      (if (eq (intern (file-name-nondirectory mode)) (car m))
-                                          (append m (list mode))
-                                        m))
-                                    jit))))
-                     modes)))
-           dirs))
-        (setq yas/jit-loads jit)
-        (when yas/jit-use-cache-dir
-          (yas/jit-cache))
-        (let ((major-mode 'text-mode))
-          (yas/jit-hook)))
-      (setq yas/get-jit-loads-again nil)))))
+             files
+             modes
+             (files '())
+             (debug-on-error 't)
+             jit)
+        (when dirs
+          (mapc (lambda(x)
+                  (setq files (append files (directory-files x 't))))
+                (yas/snippet-dirs))
+          (setq modes
+                (remove-if-not
+                 #'(lambda(file)
+                     (and (file-directory-p file)
+                          (not (string-match "^[.]" (file-name-nondirectory file)))))
+                 (directory-files (pop dirs) 't)))
+          (setq jit (mapcar (lambda(x) (list (intern (file-name-nondirectory x)) x) ) modes))
+          ;; Now add more directories.
+          (when (> (length dirs) 0)
+            (mapc
+             (lambda(dir)
+               (let ( (modes (remove-if-not
+                              #'(lambda(file)
+                                  (and (file-directory-p file)
+                                       (not (string-match "^[.]" (file-name-nondirectory file)))))
+                              (directory-files dir 't))))
+                 (mapc (lambda(mode)
+                         (if (not (assoc (intern (file-name-nondirectory mode)) jit))
+                             (add-to-list 'jit (list (intern (file-name-nondirectory mode)) mode))
+                           (setq jit (mapcar
+                                      (lambda(m)
+                                        (if (eq (intern (file-name-nondirectory mode)) (car m))
+                                            (append m (list mode))
+                                          m))
+                                      jit))))
+                       modes)))
+             dirs))
+          (setq yas/jit-loads jit)
+          (when yas/jit-use-cache-dir
+            (yas/jit-cache))
+          (let ((major-mode 'text-mode))
+            (yas/jit-hook)))
+        (setq yas/get-jit-loads-again nil)))))
 
 (defun yas/jit-hook ()
   "Have Yas load directories as needed. Derived from `yas/direct-keymaps-set-vars'"
@@ -275,9 +278,19 @@
 		      (if (not (file-exists-p snippet-cache))
 			  (progn
 			    (message "Caching snippets in %s" dir)
-			    (yas/jit-compile-dir dir)))
+			    (yas/jit-compile-dir dir snippet-cache)))
                       (message "Loading snippets in cached file, %s " snippet-cache)
-                      (load-file snippet-cache)))
+                      (if (fboundp 'yas/compile-snippets)
+                          (yas/load-directory-1 dir cur-mode
+                                                (if (not (file-readable-p (concat dir "/.yas-parents")))
+                                                    nil
+                                                  (mapcar #'intern
+                                                          (split-string
+                                                           (with-temp-buffer
+                                                             (insert-file-contents (concat dir "/.yas-parents"))
+                                                             (buffer-substring-no-properties (point-min)
+                                                                                             (point-max)))))))
+                        (load-file snippet-cache))))
                    (t
 		    (message "Loading snippet directory %s" dir)
 		    (yas/load-directory-1 dir cur-mode
@@ -302,6 +315,7 @@
             (setq test-mode (intern (pop other-modes)))
             (setq tmp (assoc test-mode yas/jit-loads))))))))
 
+;;;###autoload
 (defalias 'yas/jit-load 'yas/get-jit-loads)
 
 (defun yas/jit-hook-run ()
@@ -336,7 +350,9 @@
                 (delete-file cache))))
           yas/jit-loads))
   ad-do-it)
+
 (ad-activate 'yas/reload-all)
+
 (defun yas/load-snippet-dirs ()
   "Reload the directories listed in `yas/snippet-dirs' or
    prompt the user to select one."
@@ -344,24 +360,27 @@
       (progn
         (yas/get-jit-loads)
         (let ( (modes '())
-                (bufs (buffer-list)))
+               (bufs (buffer-list)))
           ;; Load snippets for major modes of all open buffers
           (mapc (lambda(x)
                   (with-current-buffer x
-                     (yas/jit-hook) ;; Load current mode's snippets.
-                     ))
-                 bufs)))
+                    (yas/jit-hook) ;; Load current mode's snippets.
+                    ))
+                bufs)))
     (call-interactively 'yas/load-directory)))
 
 (defun yas/jit-dir-snippet-cache (dir)
   "Returns the load-file based on the directory listed."
-  (let ((d dir) mode d..)
-    (when (string-match "[/\\]$" d)
-      (setq d (substring d 0 -1)))
-    (when (string-match "[/\\]\\([^/\\]*\\)$" d)
-      (setq mode (match-string 1 d))
-      (setq d.. (replace-match "" t t d)))
-    (concat d.. "/.yas-" mode "-snippets.el")))
+  (if (fboundp 'yas/compile-snippets)
+      (progn
+        (concat dir "/.yas-compiled-snippets.el"))
+    (let ((d dir) mode d..)
+      (when (string-match "[/\\]$" d)
+        (setq d (substring d 0 -1)))
+      (when (string-match "[/\\]\\([^/\\]*\\)$" d)
+        (setq mode (match-string 1 d))
+        (setq d.. (replace-match "" t t d)))
+      (concat d.. "/.yas-" mode "-snippets.el"))))
 
 
 ;;; Lifted from yas/compile-bundle.  Needs to keep the file-name
@@ -387,8 +406,8 @@ dropdown-list.el library.
 Here's the default value for all the parameters:
 
 (yas/jit-compile-bundle \"yasnippet.el\"
-                    \"yasnippet-bundle.el\"
-                    \"snippets\")
+                        \"yasnippet-bundle.el\"
+                        \"snippets\")
 \"(yas/initialize-bundle)
 ### autoload
 (require 'yasnippet-bundle)`\"
@@ -470,7 +489,7 @@ Here's the default value for all the parameters:
                 (replace-regexp "^[\s\t]*\n\\([\s\t]*\n\\)+" "\n" nil (point-min) (point-max))
                 (kill-region (point-min) (point-max)))
               (yank)))
-          (yas/load-directory-1 subdir nil))))
+          (yas/load-directory-1 subdir nil nil))))
     
     (insert (pp-to-string `(yas/global-mode 1)))
     (insert ")\n\n" code "\n")
@@ -491,52 +510,65 @@ Here's the default value for all the parameters:
             " ends here\n"))))
 
 ;;;###autoload
-(defun yas/jit-compile-dir (dir)
+(defun yas/jit-compile-dir (dir &optional out)
   "Compiles directory into a \"bundle\".  Useful for caching purposes."
   (interactive "fDirectory to compile/cache:")
-  (let ((empty-file (make-temp-file "yasnippet" nil ".el"))
-	mode
-	(d dir)
-	(d.. ))
-    (when (string-match "[/\\]$" d)
-      (setq d (substring d 0 -1)))
-    (when (string-match "[/\\]\\([^/\\]*\\)$" d)
-      (setq mode (match-string 1 d))
-      (setq d.. (replace-match "" t t d)))
-    (if (not (file-exists-p (concat d.. "/root")))
-	(make-directory (concat d.. "/root")))
-    (rename-file d (concat d.. "/root/" mode))
-    
-    (yas/jit-compile-bundle (if (file-readable-p (concat d.. "/root/" mode "/.yas-setup.el"))
-                            (concat d.. "/root/" mode "/.yas-setup.el")
-     			  empty-file)
-     			(concat d.. "/.yas-" mode "-snippets.el")
-     			`(,(concat d.. "/root/")) (concat ) empty-file
-                        t
-                        )
-    (rename-file (concat d.. "/root/" mode ) d)
-    (delete-directory (concat d.. "/root"))
-    (delete-file empty-file)
-    (save-excursion
-      (let ((coding-system-for-write 'no-conversion))
-      (set-buffer (find-file-noselect (concat d.. "/.yas-" mode "-snippets.el")))
-      (goto-char (point-min))
-      (when (search-forward "(yas/define-snippets" nil t)
-	(goto-char (match-beginning 0))
-	(delete-region (point-min) (point))
-	(forward-sexp)
-	(delete-region (point) (point-max)))
-      (goto-char (point-min))
-      (when (file-readable-p (concat d ".yas-setup.el"))
-	(insert ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  (if (fboundp 'yas/compile-snippets)
+      (progn
+        (yas/compile-snippets dir out)
+        (while (not (file-exists-p out))
+          (sleep 1))
+        ;;;
+        (with-temp-buffer
+          (insert-file-contents out)
+          (goto-char (point-min))
+          (when (search-forward "(yas/define-snippets 'nil" nil t)
+            (replace-match (concat "(yas/define-snippets '"
+                                   (file-name-nondirectory (substring (file-name-directory out) 0 -1))))
+            (write-file out))))
+    (let ((empty-file (make-temp-file "yasnippet" nil ".el"))
+          mode
+          (d dir)
+          (d.. ))
+      (when (string-match "[/\\]$" d)
+        (setq d (substring d 0 -1)))
+      (when (string-match "[/\\]\\([^/\\]*\\)$" d)
+        (setq mode (match-string 1 d))
+        (setq d.. (replace-match "" t t d)))
+      (if (not (file-exists-p (concat d.. "/root")))
+          (make-directory (concat d.. "/root")))
+      (rename-file d (concat d.. "/root/" mode))
+      
+      (yas/jit-compile-bundle (if (file-readable-p (concat d.. "/root/" mode "/.yas-setup.el"))
+                                  (concat d.. "/root/" mode "/.yas-setup.el")
+                                empty-file)
+                              (concat d.. "/.yas-" mode "-snippets.el")
+                              `(,(concat d.. "/root/")) (concat ) empty-file
+                              t
+                              )
+      (rename-file (concat d.. "/root/" mode ) d)
+      (delete-directory (concat d.. "/root"))
+      (delete-file empty-file)
+      (save-excursion
+        (let ((coding-system-for-write 'no-conversion))
+          (set-buffer (find-file-noselect (concat d.. "/.yas-" mode "-snippets.el")))
+          (goto-char (point-min))
+          (when (search-forward "(yas/define-snippets" nil t)
+            (goto-char (match-beginning 0))
+            (delete-region (point-min) (point))
+            (forward-sexp)
+            (delete-region (point) (point-max)))
+          (goto-char (point-min))
+          (when (file-readable-p (concat d ".yas-setup.el"))
+            (insert ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; .yas-setup.el
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;\n")
-	(insert-file-contents (concat d ".yas-setup.el"))
-	(insert "\n;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+            (insert-file-contents (concat d ".yas-setup.el"))
+            (insert "\n;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; end .yas-setup.el
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;\n"))
-      (save-buffer (current-buffer))
-      (kill-buffer (current-buffer))))))
+          (save-buffer (current-buffer))
+          (kill-buffer (current-buffer)))))))
 
 (provide 'yas-jit)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
